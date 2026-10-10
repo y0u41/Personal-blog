@@ -1,0 +1,34 @@
+// 全局业务错误码：前后端共享，禁止在业务代码里散落魔法数字。
+export const ErrorCode = {
+  OK: 0,
+  BAD_REQUEST: 40000,
+  UNAUTHORIZED: 40100,
+  FORBIDDEN: 40300,
+  NOT_FOUND: 40400,
+  CONFLICT: 40900,
+  TOO_MANY_REQUESTS: 42900,
+  INTERNAL: 50000,
+  // 鉴权域
+  USER_EXISTS: 40901,
+  INVALID_CREDENTIALS: 40101,
+  USER_DISABLED: 40301,
+  USER_NOT_FOUND: 40401,
+  TOKEN_INVALID: 40102,
+  TOKEN_EXPIRED: 40103,
+  REFRESH_TOKEN_REVOKED: 40104,
+  PASSWORD_WEAK: 40001,
+  // 禁止对自己执行的操作（改角色 / 停用账号），避免管理员自锁
+  CANNOT_MODIFY_SELF: 40302,
+  // 通用数据域：由 Prisma 异常映射而来，避免底层错误直接冒泡成 500
+  DUPLICATE_RESOURCE: 40902,
+  ASSOCIATION_INVALID: 40004,
+  VALUE_OUT_OF_RANGE: 40005,
+  // 上传域
+  UPLOAD_TYPE_INVALID: 40002,
+  UPLOAD_TOO_LARGE: 40003,
+  UPLOAD_FAILED: 50001,
+  // 评论域
+  COMMENT_NOT_FOUND: 40402,
+} as const;
+
+export type AppErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];
