@@ -1,0 +1,188 @@
+// Prisma schema —— 由 schema.sql 翻译而来，二者必须同步。
+// 改动流程：改 schema.sql → 改此处 → prisma migrate dev → 同步 Tech_Design.md 数据库章节。
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  admin
+  author
+  reader
+}
+
+enum PostStatus {
+  draft
+  published
+  archived
+}
+
+enum CommentStatus {
+  pending
+  approved
+  spam
+}
+
+model User {
+  id           BigInt     @id @default(autoincrement()) @db.UnsignedBigInt
+  username     String     @unique @db.VarChar(50)
+  email        String     @unique @db.VarChar(120)
+  passwordHash String     @map("password_hash") @db.VarChar(255)
+  displayName  String     @default("") @map("display_name") @db.VarChar(50)
+  avatar       String?    @map("avatar") @db.VarChar(255)
+  bio          String?    @map("bio") @db.VarChar(500)
+  role         Role       @default(reader)
+  status       Int        @default(1)
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+
+  posts         Post[]
+  comments      Comment[]
+  refreshTokens RefreshToken[]
+  postLikes     PostLike[]
+  postFavorites PostFavorite[]
+
+  @@index([status], map: "idx_status")
+  @@map("users")
+}
+
+model Category {
+  id          BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  name        String    @db.VarChar(50)
+  slug        String    @unique @db.VarChar(60)
+  parentId    BigInt?   @map("parent_id") @db.UnsignedBigInt
+  description String?   @db.VarChar(255)
+  sortOrder   Int       @default(0) @map("sort_order")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  parent   Category? @relation("CategoryToCategory", fields: [parentId], references: [id], onDelete: SetNull)
+  children Category[] @relation("CategoryToCategory")
+  posts    Post[]
+
+  @@index([parentId], map: "idx_parent")
+  @@map("categories")
+}
+
+model Post {
+  id          BigInt      @id @default(autoincrement()) @db.UnsignedBigInt
+  title       String      @db.VarChar(200)
+  slug        String      @unique @db.VarChar(220)
+  summary     String?     @db.VarChar(500)
+  content     String      @db.LongText
+  coverImage  String?     @map("cover_image") @db.VarChar(255)
+  authorId    BigInt      @map("author_id") @db.UnsignedBigInt
+  categoryId  BigInt?     @map("category_id") @db.UnsignedBigInt
+  status      PostStatus  @default(draft)
+  views       Int         @default(0) @db.UnsignedInt
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @updatedAt @map("updated_at")
+  publishedAt DateTime?   @map("published_at")
+  /// 置顶时间：NULL = 未置顶。用时间戳而非布尔值，多个置顶按置顶先后排序。
+  /// 不变量：仅 status = 'published' 的文章可置顶；转为草稿/归档时由应用层清空。
+  pinnedAt    DateTime?   @map("pinned_at")
+
+  author    User           @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  category  Category?      @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  postTags  PostTag[]
+  comments  Comment[]
+  likes     PostLike[]
+  favorites PostFavorite[]
+
+  @@index([authorId], map: "idx_author")
+  @@index([categoryId], map: "idx_category")
+  @@index([status, publishedAt], map: "idx_status_published")
+  @@index([status, pinnedAt], map: "idx_status_pinned")
+  @@map("posts")
+}
+
+model Tag {
+  id   BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  name String   @db.VarChar(50)
+  slug String   @unique @db.VarChar(60)
+
+  postTags PostTag[]
+
+  @@map("tags")
+}
+
+model PostTag {
+  postId BigInt @map("post_id") @db.UnsignedBigInt
+  tagId  BigInt @map("tag_id") @db.UnsignedBigInt
+
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  tag  Tag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([postId, tagId])
+  @@index([tagId], map: "idx_tag")
+  @@map("post_tags")
+}
+
+model Comment {
+  id         BigInt         @id @default(autoincrement()) @db.UnsignedBigInt
+  postId     BigInt         @map("post_id") @db.UnsignedBigInt
+  userId     BigInt?        @map("user_id") @db.UnsignedBigInt
+  parentId   BigInt?        @map("parent_id") @db.UnsignedBigInt
+  authorName String?        @map("author_name") @db.VarChar(50)
+  content    String         @db.Text
+  status     CommentStatus  @default(pending)
+  createdAt  DateTime       @default(now()) @map("created_at")
+
+  post     Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user     User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  parent   Comment? @relation("CommentToComment", fields: [parentId], references: [id], onDelete: Cascade)
+  children Comment[] @relation("CommentToComment")
+
+  @@index([postId], map: "idx_post")
+  @@index([parentId], map: "idx_parent")
+  @@map("comments")
+}
+
+model RefreshToken {
+  id         BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  userId     BigInt   @map("user_id") @db.UnsignedBigInt
+  tokenHash  String   @map("token_hash") @db.VarChar(255)
+  expiresAt  DateTime @map("expires_at")
+  revoked    Int      @default(0)
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([tokenHash], map: "uk_token_hash")
+  @@index([userId], map: "idx_user")
+  @@index([expiresAt], map: "idx_expires")
+  @@map("refresh_tokens")
+}
+
+// 点赞：同一用户对同一文章只能有一条（复合主键天然去重，无需应用层判重）
+model PostLike {
+  postId    BigInt   @map("post_id") @db.UnsignedBigInt
+  userId    BigInt   @map("user_id") @db.UnsignedBigInt
+  createdAt DateTime @default(now()) @map("created_at")
+
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([postId, userId])
+  @@index([userId], map: "idx_user")
+  @@map("post_likes")
+}
+
+// 收藏：结构与点赞一致，但语义独立（计数分开，且「我的收藏」是独立入口）
+model PostFavorite {
+  postId    BigInt   @map("post_id") @db.UnsignedBigInt
+  userId    BigInt   @map("user_id") @db.UnsignedBigInt
+  createdAt DateTime @default(now()) @map("created_at")
+
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([postId, userId])
+  @@index([userId], map: "idx_user")
+  @@map("post_favorites")
+}
