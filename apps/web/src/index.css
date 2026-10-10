@@ -1,0 +1,62 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+  /* 文章正文排版（无 typography 插件，手写核心样式） */
+  .markdown-body {
+    @apply text-[15px] leading-7 text-slate-700;
+  }
+  .markdown-body h1 {
+    @apply mb-4 mt-6 border-b border-slate-200 pb-2 text-2xl font-bold text-slate-800;
+  }
+  .markdown-body h2 {
+    @apply mb-3 mt-6 text-xl font-semibold text-slate-800;
+  }
+  .markdown-body h3 {
+    @apply mb-2 mt-5 text-lg font-semibold text-slate-800;
+  }
+  .markdown-body p {
+    @apply my-3;
+  }
+  .markdown-body a {
+    @apply text-indigo-600 underline hover:text-indigo-700;
+  }
+  .markdown-body ul {
+    @apply my-3 list-disc pl-6;
+  }
+  .markdown-body ol {
+    @apply my-3 list-decimal pl-6;
+  }
+  .markdown-body li {
+    @apply my-1;
+  }
+  .markdown-body blockquote {
+    @apply my-4 border-l-4 border-indigo-200 bg-indigo-50/50 px-4 py-1 text-slate-600;
+  }
+  .markdown-body code {
+    @apply rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[13px] text-pink-600;
+  }
+  .markdown-body pre {
+    @apply my-4 overflow-x-auto rounded-lg bg-slate-900 p-4 text-[13px] leading-6;
+  }
+  .markdown-body pre code {
+    @apply bg-transparent p-0 text-slate-100;
+  }
+  .markdown-body table {
+    @apply my-4 w-full border-collapse text-sm;
+  }
+  .markdown-body th,
+  .markdown-body td {
+    @apply border border-slate-200 px-3 py-1.5 text-left;
+  }
+  .markdown-body th {
+    @apply bg-slate-50 font-semibold;
+  }
+  .markdown-body img {
+    @apply my-4 max-w-full rounded-lg;
+  }
+  .markdown-body hr {
+    @apply my-6 border-slate-200;
+  }
+}
