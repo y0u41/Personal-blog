@@ -130,6 +130,14 @@ pnpm dev                             # api :3000 + web :5173
 > seed 会创建默认管理员账号（见 `apps/api/prisma/seed.ts`）。
 > **任何对外可访问的环境，部署后请立即修改默认密码与 JWT 密钥。**
 
+> **运行环境：Node 20 LTS。** 生产镜像（`node:20-alpine`）、CI 与本地请保持同一条 LTS 线。
+> 这里踩过一个很隐蔽的坑：`jsdom@30` 的 `engines` 是 `^22.22.2 || ^24.15.0 || >=26`，
+> 其依赖链（`undici@8`）用到了 Node 22 才有的 `webidl.util.markAsUncloneable`。
+> 本机 Node 22.22.2 下一切正常，但 CI（Node 20）一加载 jsdom 就抛 `TypeError`；
+> 而 pnpm 对 `engines` 只告警不报错，于是现象是「三个组件测试莫名不执行、覆盖率掉到 0」，
+> 而不是一条直白的版本错误。因此 `jsdom` 固定在 `^26`（`engines` 为 `>=18`）。
+> **升级依赖后，请务必用 Node 20 实跑一次测试再提交**，否则同类问题只会在 CI 上暴露。
+
 ### 环境变量
 
 见 `.env.example`（开发）与 `.env.production.example`（部署）。几个容易踩坑的：
