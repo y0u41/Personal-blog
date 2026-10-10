@@ -47,5 +47,18 @@ jobs:
       - name: Build Web (含 tsc 类型检查)
         run: pnpm --filter @blog/web build
 
-      - name: Test
-        run: pnpm -r test
+      - name: Test（含覆盖率门禁）
+        # 用 test:cov 而非 test：覆盖率阈值写在各包的测试配置里，
+        # 不跑覆盖率就不会触发门槛校验，门禁形同虚设。
+        run: pnpm -r test:cov
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: |
+            apps/api/coverage/
+            apps/web/coverage/
+          if-no-files-found: ignore
+          retention-days: 7
