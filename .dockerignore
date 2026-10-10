@@ -1,0 +1,14 @@
+**/node_modules
+**/dist
+**/build
+.git
+.gitignore
+**/.env
+**/.env.local
+**/.env.production
+# 仅排除运行期上传产物目录，注意不要用 **/uploads（会误伤 apps/api/src/uploads 源码）
+apps/api/uploads
+.workbuddy
+**/*.log
+coverage
+**/.DS_Store

@@ -1,0 +1,12 @@
+node_modules/
+dist/
+build/
+.env
+.env.local
+.env.production
+*.log
+coverage/
+.DS_Store
+# 上传产物目录（注意写全路径：写 uploads/ 会连带忽略 apps/api/src/uploads 源码）
+/apps/api/uploads/
+.workbuddy/
