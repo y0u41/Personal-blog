@@ -1,0 +1,51 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    env:
+      # prisma generate / 构建期不需要真实数据库，占位即可
+      DATABASE_URL: "mysql://user:pass@127.0.0.1:3306/blog"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        # 版本从 package.json 的 packageManager 字段读取
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build shared package
+        run: pnpm --filter @blog/shared build
+
+      - name: Prisma generate
+        run: pnpm --filter @blog/api exec prisma generate
+
+      - name: Prisma schema validate
+        run: pnpm --filter @blog/api exec prisma validate
+
+      - name: Lint
+        run: pnpm -r lint
+
+      - name: Build API
+        run: pnpm --filter @blog/api build
+
+      - name: Build Web (含 tsc 类型检查)
+        run: pnpm --filter @blog/web build
+
+      - name: Test
+        run: pnpm -r test

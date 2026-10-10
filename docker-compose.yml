@@ -1,0 +1,83 @@
+# 一键部署：MySQL + API + Web(Nginx)
+# 用法：
+#   docker compose -p blog up -d --build     # 首次构建并启动全部服务
+#   docker compose -p blog up -d mysql       # 只起数据库（本地开发用）
+#   docker compose -p blog logs -f api       # 查看后端日志
+#   docker compose -p blog down              # 停止（保留数据卷）
+#
+# 注意：本项目目录名含中文，compose 无法自动推导项目名，必须显式 -p blog。
+#
+# ⚠️ 生产部署请勿沿用开发用的根目录 .env（其中的 JWT 密钥是开发默认值）。
+#    推荐做法：
+#      cp .env.production.example .env.production   # 改成强随机密钥
+#      docker compose -p blog --env-file .env.production up -d --build
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: blog_mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
+      MYSQL_DATABASE: blog
+      MYSQL_USER: blog
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-blog}
+    ports:
+      # 仅绑定本机回环：避免 MySQL 被局域网直连（root/root 后果严重）
+      - "127.0.0.1:3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_0900_ai_ci
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-p${MYSQL_ROOT_PASSWORD:-root}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    container_name: blog_api
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: mysql://blog:${MYSQL_PASSWORD:-blog}@mysql:3306/blog?connection_limit=10
+      JWT_SECRET: ${JWT_SECRET:-dev-only-change-me-access}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-dev-only-change-me-refresh}
+      JWT_ACCESS_EXPIRES: ${JWT_ACCESS_EXPIRES:-2h}
+      JWT_REFRESH_EXPIRES: ${JWT_REFRESH_EXPIRES:-7d}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:8080}
+      # 本 compose 默认以 HTTP 暴露（:8080）。若已在前面挂了 HTTPS，请设为 true。
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      UPLOAD_DIR: /app/apps/api/uploads
+      MAX_UPLOAD_SIZE: 5242880
+      THROTTLE_LIMIT: ${THROTTLE_LIMIT:-300}
+    volumes:
+      - uploads_data:/app/apps/api/uploads
+    expose:
+      - "3000"
+    # 本地调试用（如直接看接口返回）；仅绑回环，避免绕过 Nginx 直连并伪造
+    # X-Forwarded-For 来规避按 IP 限流。对外部署可整段删除。
+    ports:
+      - "127.0.0.1:3000:3000"
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    container_name: blog_web
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - "8080:80"
+
+volumes:
+  mysql_data:
+  uploads_data:
