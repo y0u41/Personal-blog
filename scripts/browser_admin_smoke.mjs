@@ -161,6 +161,44 @@ async function deleteTempPost(ctx) {
   });
 }
 
+/**
+ * 收尾：停用本次经 UI 注册的读者账号。
+ * 没有「删除用户」接口，只能停用；不清理的话每跑一次就在库里留一个启用态的脏账号，
+ * 累积下去会让管理端用户列表和用户 id 越来越乱。
+ */
+async function deactivateUiReader() {
+  const username = `ui${SUFFIX}`;
+  try {
+    const loginRes = await fetch(API + '/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: ADMIN_USER, password: ADMIN_PASS }),
+    });
+    if (!loginRes.ok) return false;
+    const { accessToken } = await loginRes.json();
+    const auth = { Authorization: `Bearer ${accessToken}` };
+
+    const listRes = await fetch(
+      `${API}/users?keyword=${encodeURIComponent(username)}&pageSize=50`,
+      { headers: auth },
+    );
+    if (!listRes.ok) return false;
+    const list = await listRes.json();
+    const target = (list.items ?? []).find((u) => u.username === username);
+    if (!target) return false;
+    if (target.status === 0) return true; // 已是停用态
+
+    const res = await fetch(`${API}/users/${target.id}/status`, {
+      method: 'PATCH',
+      headers: { ...auth, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: 0 }),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
 const browser = await chromium.launch({ channel: 'msedge', headless: true });
 try {
   // ---------------- 未登录 ----------------
@@ -421,6 +459,12 @@ try {
   check(jsErrors.length === 0, `全流程无 JS 异常（共 ${jsErrors.length} 条）`);
 } finally {
   await browser.close();
+  const cleaned = await deactivateUiReader();
+  console.log(
+    cleaned
+      ? `  读者账号 ui${SUFFIX} 已停用（无删除用户接口）`
+      : `  ⚠ 读者账号 ui${SUFFIX} 未能自动停用，请手动清理`,
+  );
 }
 
 console.log(`\n===== 浏览器冒烟 DONE: ${pass} passed, ${fail} failed =====`);
