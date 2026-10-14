@@ -1,42 +1,96 @@
-# 个人博客系统
+# 📝 个人博客系统
 
-![License](https://img.shields.io/badge/license-MIT-green) ![NestJS](https://img.shields.io/badge/NestJS-11-E0234E) ![React](https://img.shields.io/badge/React-19-61DAFB) ![Prisma](https://img.shields.io/badge/Prisma-6-2D3748)
+![License](https://img.shields.io/badge/license-MIT-green) ![NestJS](https://img.shields.io/badge/NestJS-11-E0234E) ![React](https://img.shields.io/badge/React-19-61DAFB) ![Prisma](https://img.shields.io/badge/Prisma-6-2D3748) ![Tests](https://img.shields.io/badge/coverage-53%25-brightgreen)
 
-前后端分离的个人博客平台。后端 NestJS + Prisma + MySQL，前端 React + Vite，Nginx 反向代理，
-Docker Compose 一键起全栈。含三级 RBAC、双 Token 认证、评论审核、点赞收藏、
-随笔归档与年度热力图、排行榜、文章置顶，并配有单测、端到端回归与浏览器冒烟三层测试体系。
+> 一个功能完备的前后端分离博客平台，含三级权限、评论审核、数据统计 📊
 
-## 特性
+## 这是什么？
 
-**内容与组织**
-- 文章三态（草稿 / 已发布 / 已归档）、多级分类、标签多对多、Markdown 写作与实时预览
-- 随笔归档：按年月的档案树 + 年度发文热力图 + 文章时间线
-- 排行榜：阅读榜 / 评论榜 / 推荐榜（总榜）
-- 文章置顶（个人中心一键切换，列表置顶优先）
-- 上下篇导航、相关文章（按共享标签）、热门文章侧栏、标签云
+一个**生产级**的个人博客系统，不只是能用，而是**好用且安全**。前后端分离架构，Docker Compose 一键部署，配有三层测试体系（单测 + e2e + 浏览器冒烟）。
 
-**互动与权限**
-- 点赞 / 收藏（幂等接口）、我的收藏页
-- 两级评论与多级回复，评论三态审核（待审 / 通过 / 垃圾）
-- 三级角色 admin / author / reader，注册默认最小权限，管理员在后台提升作者
-- 管理后台：用户与权限、评论审核、分类、标签
+**适合场景**：
+- 📚 学习 NestJS + React 全栈开发
+- 🚀 部署个人博客（生产可用）
+- 🎯 研究 RBAC 权限、安全防护的最佳实践
 
-**工程与安全**
-- 双 Token 认证，refresh token 落库可服务端撤销
-- 按 IP / 用户的接口限流，敏感接口更严格
-- 图片上传三重校验（MIME + 后缀 + 文件头魔数嗅探）
-- 统一异常映射、BigInt 主键越界校验、响应体脱敏
-- Nginx 安全响应头、SPA 回退与真实 404
-- GitHub Actions CI（类型检查 → Lint → 构建 → 测试 → 覆盖率门禁）
+## ✨ 功能特性
 
-## 技术栈
+### 内容管理
+- 📝 文章三态（草稿/已发布/已归档）+ Markdown 实时预览
+- 📁 多级分类 + 标签多对多
+- 📊 随笔归档：档案树 + 年度热力图 + 时间线
+- 🏆 排行榜：阅读榜/评论榜/推荐榜
+- 📌 文章置顶
+
+### 互动功能
+- ❤️ 点赞/收藏（幂等接口）
+- 💬 两级评论 + 多级回复 + 三态审核
+- 👤 三级角色（admin/author/reader）
+
+### 安全与工程
+- 🔐 双 Token 认证 + refresh token 可撤销
+- 🛡️ 接口限流 + 图片三重校验
+- 🧪 三层测试（单测/e2e/浏览器冒烟）
+- 🚀 GitHub Actions CI + 覆盖率门禁
+
+## 🛠️ 技术栈
 
 | 层 | 选型 |
 |---|---|
-| 后端 | Node.js 20 · TypeScript 5（strict）· NestJS 10 · Prisma 5 · MySQL 8（InnoDB / utf8mb4） |
-| 前端 | React 18 · Vite 5 · TypeScript · Zustand · React Router 6 · Tailwind CSS 3 · react-markdown |
-| 工程 | pnpm workspace monorepo · ESLint · Prettier · Jest（后端）· Vitest + Testing Library（前端） |
-| 部署 | Docker Compose · Nginx · GitHub Actions |
+| **后端** | NestJS 11 · Prisma 6 · MySQL 8 |
+| **前端** | React 19 · Vite · Tailwind CSS |
+| **部署** | Docker Compose · Nginx · GitHub Actions |
+| **测试** | Jest · Vitest · 覆盖率 53%+ |
+
+## 📁 目录结构
+
+```
+Personal-blog/
+├── apps/
+│   ├── api/                # NestJS 后端
+│   │   ├── prisma/         # 数据库 schema + 迁移
+│   │   └── src/            # 业务模块
+│   └── web/                # React 前端
+│       ├── src/pages/      # 页面
+│       └── src/components/ # 组件
+├── packages/shared/        # 前后端共享类型
+├── docker-compose.yml      # 一键部署
+└── .github/workflows/      # CI 流水线
+```
+
+## 🚀 快速开始
+
+```bash
+# 1. 安装依赖
+pnpm install
+
+# 2. 配置环境变量
+cp .env.example .env
+
+# 3. 初始化数据库
+pnpm db:push
+
+# 4. 启动开发环境
+pnpm dev
+```
+
+**Docker 一键部署**：
+
+```bash
+docker compose up -d
+```
+
+## 🧪 测试
+
+```bash
+pnpm test           # 后端单测
+pnpm test:web       # 前端测试
+pnpm test:coverage  # 覆盖率报告
+```
+
+## 📄 许可证
+
+[MIT License](LICENSE) © y0u41
 
 ## 架构
 
