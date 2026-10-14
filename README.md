@@ -1,5 +1,7 @@
 # 个人博客系统
 
+![License](https://img.shields.io/badge/license-MIT-green) ![NestJS](https://img.shields.io/badge/NestJS-11-E0234E) ![React](https://img.shields.io/badge/React-19-61DAFB) ![Prisma](https://img.shields.io/badge/Prisma-6-2D3748)
+
 前后端分离的个人博客平台。后端 NestJS + Prisma + MySQL，前端 React + Vite，Nginx 反向代理，
 Docker Compose 一键起全栈。含三级 RBAC、双 Token 认证、评论审核、点赞收藏、
 随笔归档与年度热力图、排行榜、文章置顶，并配有单测、端到端回归与浏览器冒烟三层测试体系。
